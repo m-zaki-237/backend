@@ -1,4 +1,4 @@
-import {ImageKit} from '@imagekit/nodejs'
+import {ImageKit} from '@imagekit/nodejs/index.js'
 
 const client = new ImageKit({
     privateKey: process.env.IMAGEKIT_PRIVATE_KEY
