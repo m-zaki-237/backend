@@ -4,16 +4,6 @@ import musicModel from "../models/music.model.js";
 import albumModel from "../models/album.model.js";
 import jwt from 'jsonwebtoken'
 export const createMusic = async (req, res) => {
-  const token = req.cookies.token;
-  if (!token) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    if (decoded.role !== 'artist') {
-      return res.status(403).json({ message: "Unauthorized Access!" });
-    }
-
     const { title } = req.body;
     const file = req.file;
 
@@ -21,7 +11,7 @@ export const createMusic = async (req, res) => {
 
     const music = await musicModel.create({
       title,
-      artist: decoded.id,
+      artist: req.user.id,
       uri: result.url,
     });
     res.status(201).json({
@@ -33,28 +23,13 @@ export const createMusic = async (req, res) => {
         artist: music.artist,
       },
     });
-  } catch (error) {
-    console.log(error);
-    
-    return res.status(401).json({ message: "Unauthorized" });
-  }
 };
 
 export const createAlbum = async (req,res) => {
-  const token = req.cookies.token;
-  if (!token) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    if (decoded.role !== 'artist') {
-      return res.status(403).json({ message: "Unauthorized Access!" });
-    }
-
     const {title, musics} = req.body
     const album = await albumModel.create({
       title,
-      artist: decoded.id,
+      artist: req.user.id,
       musics: musics
     })
 
@@ -67,20 +42,32 @@ export const createAlbum = async (req,res) => {
         music: album.musics
       }
     })
+}
 
+export const getAllMusics = async (req,res) => {
+  const musics = await musicModel
+  .find()
+  .limit(1)
+  .populate("artist")
+  res.status(200).json({
+    message: "Musics fetched successfully",
+    musics: musics
+  })
+}
 
+export const getAllAlbums = async (req,res) => {
+  const albums = await albumModel.find().select("artist title").populate("artist", "email username")
+  res.status(200).json({
+    message: "Albums fetched successfully",
+    albums: albums
+  })
+}
 
-
-
-
-
-
-
-
-
-  } catch (error) {
-    console.log(error);
-    
-    return res.status(401).json({ message: "Unauthorized" });
-  }
+export const getAlbumById = async (req,res) => {
+  const albumId = req.params.albumId
+  const album = await albumModel.findById(albumId).populate("artist", "email username").populate("musics")
+  res.status(200).json({
+    message: "Album fetched successfully",
+    album: album
+  })
 }
